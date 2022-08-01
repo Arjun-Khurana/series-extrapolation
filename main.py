@@ -15,8 +15,9 @@ def main(args) -> None:
 
     fcen = 0.15              # pulse center frequency
     df = 0.1                 # pulse frequency width
-    dt = 0.1
-    freqs = np.linspace(fcen - df, fcen + df, 100)
+    dt = 1
+    # freqs = np.linspace(fcen - df, fcen + df, 1000)
+    freqs = [fcen]
     src = mp.Source(mp.GaussianSource(fcen, fwidth=df), mp.Ez, mp.Vector3(r+0.1))
 
     sim = mp.Simulation(

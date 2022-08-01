@@ -8,28 +8,31 @@ def main() -> None:
         dft = data['dft']
         fcen, df, dt = data['domain']
 
-    # fw = 0
+    # plt.plot(dft)
+    # plt.savefig('dtft.png')
+    # plt.close()
+    # fw = np.fft.fftshift(np.fft.fft(ez))
+    # plt.plot(np.abs(fw)**2)
+    # plt.plot(np.angle(fw)**2)
+    # plt.xlim([0, 100])
+    # plt.show()
+    # quit()
 
-    plt.plot(dft)
-    plt.show()
-    fw = np.fft.fft(ez)
-    plt.plot(fw)
-    plt.xlim([0, 100])
-    plt.show()
+    t = np.arange(0, len(ez)*dt, dt)
+    # print(t)
+    plt.plot(t, ez)
+    plt.savefig('time-domain.png')
+    # print(t[-1])
 
-    # t = np.arange(0, len(ez)*dt, dt)
-    # # print(t)
-    # plt.plot(t, ez)
-    # plt.savefig('time-domain.png')
-    # # print(t[-1])
+    fw = 0
+    for n,fn in enumerate(ez):
+        fw += dt/np.sqrt(2*np.pi) * (fn * np.exp(1j * 2*np.pi*(fcen) * n * dt))
+    
+    print(f'abs(dft): {np.abs(dft)**2}')
+    print(f'abs(fw): {np.abs(fw)**2}')
 
-    # fw = np.sum(dt/np.sqrt(2*np.pi) * (ez * np.exp(1j * 2*np.pi*(fcen) * t)))
-
-    # print(f'abs(dft): {np.abs(dft)**2}')
-    # print(f'abs(fw): {np.abs(fw)**2}')
-
-    # print(f'ang(dft): {np.angle(dft)}')
-    # print(f'ang(fw): {np.angle(fw)}')
+    print(f'ang(dft): {np.angle(dft)}')
+    print(f'ang(fw): {np.angle(fw)}')
 
 
 
