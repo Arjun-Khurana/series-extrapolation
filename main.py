@@ -15,9 +15,10 @@ def main(args) -> None:
 
     fcen = 0.15              # pulse center frequency
     df = 0.1                 # pulse frequency width
-    dt = 1
-    # freqs = np.linspace(fcen - df, fcen + df, 1000)
-    freqs = [fcen]
+    chron = 0.5
+    dt = 0
+    freqs = np.linspace(fcen - df, fcen + df, 100)
+    # freqs = [fcen]
     src = mp.Source(mp.GaussianSource(fcen, fwidth=df), mp.Ez, mp.Vector3(r+0.1))
 
     sim = mp.Simulation(
@@ -46,15 +47,14 @@ def main(args) -> None:
         mp.at_every(dt, save_field),
         until=args.time
     )
-
+    dt = sim.fields.dt
     dft_data = [sim.get_dft_array(dft_fields, mp.Ez, i) for i in range(len(freqs))]
-    np.savez('ring-data.npz', ez=ez_data, dft=dft_data, domain=[fcen, df, dt])
+    np.savez('ring-data.npz', ez=ez_data, dft=dft_data, domain=[fcen, df, dt], freqs=freqs)
 
     # sim.run(
     #     mp.at_beginning(mp.output_epsilon),
     #     mp.to_appended("ez", mp.at_every(1, mp.output_efield_z)),
-    #     mp.after_sources(mp.Harminv(mp.Ez, mp.Vector3(r+0.1), fcen, df)),
-    #     until_after_sources=300
+    #     until_after_sources=800
     # )
 
 if __name__ == '__main__':

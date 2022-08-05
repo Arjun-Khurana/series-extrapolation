@@ -7,6 +7,7 @@ def main() -> None:
         ez = data['ez']
         dft = data['dft']
         fcen, df, dt = data['domain']
+        freqs = data['freqs']
 
     # plt.plot(dft)
     # plt.savefig('dtft.png')
@@ -18,21 +19,45 @@ def main() -> None:
     # plt.show()
     # quit()
 
-    t = np.arange(0, len(ez)*dt, dt)
-    # print(t)
-    plt.plot(t, ez)
-    plt.savefig('time-domain.png')
+    # t = np.arange(0, len(ez)*dt, dt)
+    # # print(t)
+    # plt.plot(t, ez)
+    # plt.savefig('time-domain.png')
     # print(t[-1])
 
-    fw = 0
-    for n,fn in enumerate(ez):
-        fw += dt/np.sqrt(2*np.pi) * (fn * np.exp(1j * 2*np.pi*(fcen) * n * dt))
-    
-    print(f'abs(dft): {np.abs(dft)**2}')
-    print(f'abs(fw): {np.abs(fw)**2}')
+    # freqs = np.linspace(fcen - df, fcen + df, 100)
 
-    print(f'ang(dft): {np.angle(dft)}')
-    print(f'ang(fw): {np.angle(fw)}')
+    fws = []
+    for freq in freqs:
+        fw = 0
+        for n,fn in enumerate(ez):
+            fw += dt/np.sqrt(2*np.pi) * (fn * np.exp(1j * 2*np.pi*(freq) * n * dt))
+        fws.append(fw/4)
+
+    
+    # print(f'abs(dft): {np.abs(dft)**2}')
+    plt.plot(np.abs(dft), label='meep')
+    plt.plot(np.abs(fws), label='manual')
+    plt.xlabel('frequency')
+    plt.ylabel('abs(dtft)')
+    plt.legend()
+    plt.savefig('abs_dtft.png')
+    plt.close()
+    plt.plot(np.angle(dft), label='meep')
+    plt.plot(np.angle(fws), label='manual')
+    plt.xlabel('frequency')
+    plt.ylabel('angle(dtft)')
+    plt.legend()
+    plt.savefig('angle_dtft.png')
+
+    # plt.plot(np.abs(fws / dft))
+    # plt.show()
+    # plt.plot(np.angle(fws / dft))
+    # plt.show()
+    # print(f'abs(fw): {np.abs(fws)**2}')
+
+    # print(f'ang(dft): {np.angle(dft)}')
+    # print(f'ang(fw): {np.angle(fws)}')
 
 
 
