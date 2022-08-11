@@ -15,6 +15,7 @@ def main(args) -> None:
 
     fcen = 0.15              # pulse center frequency
     df = 0.1                 # pulse frequency width
+    dtft_df = 0.02
     chron = 0.5
     dt = 0
     freqs = np.linspace(fcen - df, fcen + df, 100)
@@ -37,7 +38,7 @@ def main(args) -> None:
 
     dft_fields = sim.add_dft_fields(
         [mp.Ez],
-        freqs,
+        dtft_freqs:= np.linspace(fcen - dtft_df, fcen + dtft_df, 1000),
         center=mp.Vector3(r + w/2, 0, 0),
         size=mp.Vector3(0,0,0),
         decimation_factor=1
@@ -48,8 +49,9 @@ def main(args) -> None:
         until=args.time
     )
     dt = sim.fields.dt
-    dft_data = [sim.get_dft_array(dft_fields, mp.Ez, i) for i in range(len(freqs))]
-    np.savez('ring-data.npz', ez=ez_data, dft=dft_data, domain=[fcen, df, dt], freqs=freqs)
+    dft_data = [sim.get_dft_array(dft_fields, mp.Ez, i) for i in range(len(dtft_freqs))]
+    if mp.am_really_master():
+        np.savez(f'ring-data_t={args.time}.npz', ez=ez_data, dft=dft_data, domain=[fcen, df, dt], freqs=dtft_freqs)
 
     # sim.run(
     #     mp.at_beginning(mp.output_epsilon),
@@ -59,7 +61,7 @@ def main(args) -> None:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--resolution', '-r', type=float, default=20, help='resolution')
+    parser.add_argument('--resolution', '-r', type=float, default=30, help='resolution')
     parser.add_argument('--time', '-t', type=float, default=200, help='time')
     args = parser.parse_args()
     main(args)
