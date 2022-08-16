@@ -6,7 +6,7 @@ clean:
 	rm -f *.gif
 
 run: clean
-	python3 main.py
+	python3 ring.py
 	python3 pade.py
 
 pade:

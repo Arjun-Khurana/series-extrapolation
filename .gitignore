@@ -3,3 +3,7 @@ gif/
 *.npz
 *.gif
 *.png
+ring*/
+cavity*/
+sandbox.py
+__pycache__/

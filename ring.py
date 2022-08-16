@@ -13,9 +13,9 @@ def main(args) -> None:
     c1 = mp.Cylinder(radius=r+w, material=mp.Medium(index=n))
     c2 = mp.Cylinder(radius=r)
 
-    fcen = 0.15              # pulse center frequency
+    fcen = 0.175              # pulse center frequency
     df = 0.1                 # pulse frequency width
-    dtft_df = 0.02
+    dtft_df = 0.05
     chron = 0.5
     dt = 0
     freqs = np.linspace(fcen - df, fcen + df, 100)
@@ -57,6 +57,11 @@ def main(args) -> None:
     #     mp.at_beginning(mp.output_epsilon),
     #     mp.to_appended("ez", mp.at_every(1, mp.output_efield_z)),
     #     until_after_sources=800
+    # )
+
+    # sim.run(
+    #     mp.after_sources(mp.Harminv(mp.Ez, mp.Vector3(r+w/2), fcen, df)),
+    #     until_after_sources=4000
     # )
 
 if __name__ == '__main__':
