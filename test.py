@@ -1,121 +1,98 @@
+from numpy.linalg import cond, norm
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.integrate import trapz
+import glob, re
+import argparse
 
-# x = np.linspace(-10, 10, 1000)
-# y = np.sin(2*np.pi*x)
 
-# fw = np.fft.fft(y)
-# w = np.fft.fftfreq(len(x), x[1]-x[0])
+for step in [5, 8]:
+    f = 'ring-data'
+    folder = f'julia_ring-data_res=20_step={step}'
+    p = 'jpade-data'
 
-# # y2 = np.fft.ifft(fw)
-# # plt.plot(x,y2)
-# # plt.show()
-# plt.plot(w,fw)
-# plt.show()
+    ts = sorted([int(re.split('=|\.', x)[-2]) for x in glob.glob(f'{folder}/jextrapolation*')])
+    print(ts)
+    # print([re.split('=|\.', x) for x in glob.glob(f'{folder}/extrapolation*')])
+    # quit()
+    last = sorted([int(re.split('=|\.', x)[-2]) for x in glob.glob(f'{folder}/{f}*')])[-1]
 
-# plt.plot(x,y)
-# plt.show()
-
-ts = [500, 4000, 40000]
-
-for t in ts:
-    with np.load(f'ring-data_t={t}.0.npz') as data:
+    with np.load(f'{folder}/{f}_t={last}.npz') as data:
         dft = data['dft']
-        freqs = data['freqs']
 
-    periods = (5*t)//200
+    ground_truth = np.log10(np.abs(dft)**2 / max(np.abs(dft)**2))
+    # plt.plot(freqs, ground_truth)
+    # plt.show()
 
-    plt.semilogy(freqs, np.abs(dft)**2 / max(np.abs(dft)**2), label=f'$|DTFT|^2$, {periods} periods')
+    norms = []
+    norms2 = []
+    pnorms = []
+    qnorms = []
 
+    for t in ts:
+        with np.load(f'{folder}/{p}_t={t}.npz') as data:
+            pade_approx = data['pade_approx']
+            pn = data['p']
+            qn = data['q']
+
+        # print(len(pn), len(qn))
+        # plt.plot(pn, label=f'{t}')
+
+        with np.load(f'{folder}/{f}_t={t}.npz') as data:
+            dft = data['dft']
+            # fcen, df, dt = data['domain']
+            # freqs = data['freqs']
+
+        meep = np.log10(np.abs(dft)**2 / max(np.abs(dft)**2))
+
+        loggy = np.log10(np.abs(pade_approx)**2 / max(np.abs(pade_approx)**2))
+        normy = norm(loggy - ground_truth) / norm(ground_truth)
+
+        pnorms.append(np.log10(norm(pn)))
+        qnorms.append(np.log10(norm(qn)))
+
+        norms.append(normy)
+        norms2.append(norm(meep - ground_truth) / norm(ground_truth)) 
+
+    # plt.legend()
+    # plt.show()
+
+    pnormdiff = []
+    qnormdiff = []
+
+    for i in range(len(pnorms)-1):
+        pnormdiff.append(pnorms[i+1] - pnorms[i])
+        qnormdiff.append(qnorms[i+1] - qnorms[i])
+
+    # plt.plot(ts[1:], pnormdiff, marker='o')
+    # plt.plot(ts[1:], qnormdiff, marker='o')
+    # plt.show()
+    # quit()
+
+    plt.semilogy(ts, norms, '-o', label=f'|pade - ground|, step={step}')
+    # plt.semilogy(ts, norms2, '-o', label='|meep - ground|')
+    # plt.xlabel('Meep Time Steps')
+    # plt.ylabel('Error')
+    # plt.legend()
+    # plt.show()
+
+
+
+    meeps = []
+
+    ts = sorted([int(re.split('=|\.', x)[-2]) for x in glob.glob(f'{folder}/{f}*')])[1:]
+    print(ts)
+    for t in ts:
+        with np.load(f'{folder}/{f}_t={t}.npz') as data:
+            dft = data['dft']
+
+        meep = np.log10(np.abs(dft)**2 / max(np.abs(dft)**2))
+        meeps.append(norm(meep - ground_truth)/norm(ground_truth))
+
+    print(meeps[-1] - meeps[-2])
+
+    plt.loglog(ts, meeps, '-o', label=f'|meep - ground|')
+
+plt.xlabel('Meep Time Steps')
+plt.ylabel('Error')
 plt.legend()
-plt.xlabel('frequency (meep units)')
-plt.ylabel('$|DTFT|^2$ (a.u.)')
-plt.savefig(f'dft-extension-2.png')
-plt.close()
-
-
-ring_data = np.load(f'ring-data_t={40000}.0.npz')
-pade_data = np.load(f'pade-data_t={200}.0.npz')
-freqs = ring_data['freqs']
-pade_approx = pade_data['pade_approx']
-dft = ring_data['dft']
-
-plt.semilogy(freqs, np.abs(dft)**2 / max(np.abs(dft)**2), label=f'meep, 1000 periods')
-plt.semilogy(freqs, np.abs(pade_approx)**2 / max(np.abs(pade_approx)**2), label=f'pade, 5 periods')
-plt.xlabel('frequency (meep units)')
-plt.ylabel('$|DTFT|^2$ (a.u.)')
-plt.legend()
-plt.savefig(f'pade-winning-2.png')
-plt.close()
-
-with np.load(f'ring-data_t={40000}.0.npz') as data:
-    ez = data['ez']
-    dft = data['dft']
-    fcen, df, dt = data['domain']
-    freqs = data['freqs']
-
-print(len(ez))
-
-t = np.arange(0, len(ez)*dt, dt)
-print(len(t))
-plt.plot(t,ez)
-# plt.semilogy(freqs, np.abs(dft)**2 / max(np.abs(dft)**2), label='normalized dtft: 16 periods')
-plt.xlabel('time (meep units)')
-plt.ylabel('$E_z$')
-plt.savefig(f'time-domain_t={40000}.png')
-plt.close()
-# quit()
-
-# with np.load(f'ring-data_t={4000}.0.npz') as data:
-#     ez = data['ez']
-#     dft = data['dft']
-#     fcen, df, dt = data['domain']
-#     freqs = data['freqs']
-
-# print(len(ez))
-
-# dft_4k = dft
-# t = np.arange(0, len(ez)*dt, dt)
-# print(len(t))
-# plt.semilogy(freqs, np.abs(dft)**2 / max(np.abs(dft)**2), label='normalized dtft: 100 periods')
-# plt.legend()
-# plt.xlabel('frequency (meep units)')
-# plt.ylabel('$|DTFT|^2$ (a.u.)')
-# plt.savefig(f'dft-extension.png')
-# plt.close()
-
-# ts = [75, 100, 150, 200, 250, 300, 350, 400, 450, 500]
-# # ts = [75]
-
-# int_pade = []
-# int_dft = []
-
-# for t in ts:
-#     ring_data = np.load(f'ring-data_t={t}.0.npz')
-#     pade_data = np.load(f'pade-data_t={t}.0.npz')
-#     freqs = ring_data['freqs']
-#     pade_approx = pade_data['pade_approx']
-#     dft = ring_data['dft']
-#     int_pade.append(trapz(np.abs(pade_approx)**2 / max(np.abs(pade_approx)**2), freqs))
-#     int_dft.append(trapz(np.abs(dft)**2 / max(np.abs(dft)**2), freqs))
-
-
-# # int_dft.append(trapz(np.abs(dft)**2 / max(np.abs(dft)**2), freqs))
-
-# plt.scatter(ts, int_pade)
-# plt.scatter(ts, int_dft)
-# plt.scatter([*ts, 4000], int_dft)
-# plt.show()
-
-ring_data = np.load(f'ring-data_t={200}.0.npz')
-pade_data = np.load(f'pade-data_t={200}.0.npz')
-freqs = ring_data['freqs']
-pade_approx = pade_data['pade_approx']
-dft = ring_data['dft']
-plt.semilogy(freqs, np.abs(dft)**2, label='dtft')
-plt.semilogy(freqs, np.abs(pade_approx)**2, label='pade')
-plt.xlabel('frequency (meep units)')
-plt.ylabel('$|DTFT|^2$')
-plt.legend()
-plt.savefig('unnormalized.png')
+plt.show()

@@ -34,8 +34,10 @@ def main(args) -> None:
         geometry.append(mp.Cylinder(r, center=mp.Vector3(-(d / 2 + i))))
 
     fcen = 0.25
+    # fcen = 0.2375
     df = 0.2
     dtft_df = 0.1
+    # dtft_df = 0.01
 
     source = mp.Source(
         mp.GaussianSource(fcen, fwidth=df),
@@ -76,6 +78,16 @@ def main(args) -> None:
     #     mp.to_appended("ey", mp.at_every(1, mp.output_efield_y)),
     #     until_after_sources=800
     # )
+
+    # sim.plot2D()
+    # plt.savefig('geometry.png')
+    # quit()
+
+    sim.run(
+        mp.after_sources(mp.Harminv(mp.Ey, mp.Vector3(0.5*sx-dpml-0.5), fcen, dtft_df)),
+        until_after_sources=10000
+    )
+    quit()
 
     sim.run(
         mp.at_every(dt, save_field),

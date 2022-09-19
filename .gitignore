@@ -5,5 +5,11 @@ gif/
 *.png
 ring*/
 cavity*/
+ldos*/
 sandbox.py
 __pycache__/
+.DS_Store
+figs/
+rods-data*/
+pade_julia/
+.vscode/

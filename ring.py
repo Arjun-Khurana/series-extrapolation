@@ -1,6 +1,7 @@
 import meep as mp
 import numpy as np
 import argparse
+from matplotlib import pyplot as plt
 
 def main(args) -> None:
     n = 3.4                 # index of waveguide
@@ -30,11 +31,19 @@ def main(args) -> None:
         boundary_layers=[mp.PML(dpml)]
     )
 
+
     ez_data = []
 
-    def save_field(sim: mp.Simulation = None):
+    def get_field(sim: mp.Simulation = None):
         x = sim.get_field_point(mp.Ez, mp.Vector3(r + w/2, 0, 0))
         ez_data.append(x)
+
+    def save_data(sim: mp.Simulation = None):
+        dt = sim.fields.dt
+        time = sim.fields.t
+        dft_data = [sim.get_dft_array(dft_fields, mp.Ez, i) for i in range(len(dtft_freqs))]
+        if mp.am_really_master():
+            np.savez(f'ring-data_t={int(time*dt)}.npz', ez=ez_data, dft=dft_data, domain=[fcen, df, dt], freqs=dtft_freqs)
 
     dft_fields = sim.add_dft_fields(
         [mp.Ez],
@@ -44,14 +53,34 @@ def main(args) -> None:
         decimation_factor=1
     )
 
+    sim.plot2D()
+    plt.savefig('geometry.png')
+
     sim.run(
-        mp.at_every(dt, save_field),
-        until=args.time
+        mp.at_every(dt, get_field),
+        mp.at_every(args.dpt, save_data),
+        mp.after_sources(mp.Harminv(mp.Ez, mp.Vector3(r+w/2), fcen, df)),
+        until=args.padetime
     )
-    dt = sim.fields.dt
-    dft_data = [sim.get_dft_array(dft_fields, mp.Ez, i) for i in range(len(dtft_freqs))]
-    if mp.am_really_master():
-        np.savez(f'ring-data_t={args.time}.npz', ez=ez_data, dft=dft_data, domain=[fcen, df, dt], freqs=dtft_freqs)
+
+    sim.run(
+        mp.at_every(dt, get_field),
+        mp.at_every(args.ddt, save_data),
+        # mp.after_sources(mp.Harminv(mp.Ez, mp.Vector3(r+w/2), fcen, df)),
+        until=args.dtfttime-args.padetime
+    )
+
+    sim.run(
+        mp.at_every(args.dgt, save_data),
+        until=args.groundtime-args.dtfttime
+    )
+
+    save_data(sim)
+
+    # dt = sim.fields.dt
+    # dft_data = [sim.get_dft_array(dft_fields, mp.Ez, i) for i in range(len(dtft_freqs))]
+    # if mp.am_really_master():
+    #     np.savez(f'ring-data_t={args.time}.npz', ez=ez_data, dft=dft_data, domain=[fcen, df, dt], freqs=dtft_freqs)
 
     # sim.run(
     #     mp.at_beginning(mp.output_epsilon),
@@ -67,6 +96,11 @@ def main(args) -> None:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--resolution', '-r', type=float, default=30, help='resolution')
-    parser.add_argument('--time', '-t', type=float, default=200, help='time')
+    parser.add_argument('--padetime', '-pt', type=float, default=200, help='time for pade')
+    parser.add_argument('-dpt', type=float, default=50, help='differential time for pade')
+    parser.add_argument('--dtfttime', '-dt', type=float, default=4000, help='time for dtft')
+    parser.add_argument('-ddt', type=float, default=500, help='differential time for dtft')
+    parser.add_argument('--groundtime', '-gt', type=float, default=10000, help='time for ground truth')
+    parser.add_argument('-dgt', type=float, default=500, help='differential time for ground truth')
     args = parser.parse_args()
     main(args)
